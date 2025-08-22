@@ -1,63 +1,100 @@
-![3](https://github.com/mounishvatti/pothole_detection_yolov8/assets/76279858/5e5a2ea1-c512-4c86-b0e6-b8128c997503)
+# Road Pothole Detection using YOLOv8 (Custom Segmentation)
 
-<H1 align="center">Image Segmentation & Pothole Detection</H1>
+## مقدمه
+این پروژه با هدف تشخیص و سگمنت‌سازی چاله‌های جاده‌ای (potholes) طراحی شده است.  
+با استفاده از مدل YOLOv8 می‌توان چاله‌ها را در تصاویر و ویدیوها شناسایی و برای هر چاله ماسک پیکسلی یا bounding box تولید کرد. خروجی‌های عددی مانند مساحت تقریبی هر چاله نیز قابل محاسبه است که برای اولویت‌بندی تعمیرات و مدیریت نگهداری راه‌ها مفید است.
 
-## Google Colab File Link (A Single Click Solution)
-The google colab file link for yolov8 segmentation and tracking is provided below, you can check the implementation in Google Colab, and its a single click implementation
-,you just need to select the Run Time as GPU, and click on Run All.
+## خروجی‌ها (Features)
+- تشخیص چاله‌ها با bounding box و/یا ماسک سگمنتیشن.
+- خروجی اینفرنس به صورت تصویر یا ویدیو با نمایش نتایج.
+- وزن آموزش‌دیده (best.pt) برای استقرار یا استفاده مجدد.
+- امکان محاسبه مساحت تقریبی چاله‌ها از روی ماسک‌های باینری.
 
-[`Google Colab File`](https://colab.research.google.com/drive/17SLXw-wdHG2syQhLSHH5r5_rkZx5poo0)
+## تکنولوژی‌ها
+- Python 3
+- ultralytics (YOLOv8)
+- OpenCV
+- Roboflow (دیتاست)
+- Jupyter Notebook / Google Colab
 
-## Tech stack
+## پیش‌نیازها
+- کارت گرافیک با درایور مناسب برای آموزش سریع (در Colab می‌توانید از GPU استفاده کنید).
+- Python 3.8+ و pip
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+## نصب و راه‌اندازی (Quick Start)
 
-## Object Segmentation and Tracking (ID + Trails)  using YOLOv8 on Custom Data
-
-<h2>Clone the repository</h2>
-
+1. کلون کردن مخزن:
 ```bash
-!git clone https://github.com/mounishvatti/pothole_detection_yolov8.git
-```
-<h2>Goto the cloned folder</h2>
-
-```bash
+git clone https://github.com/ArsHia-cdMstr/pothole_detection_yolov8.git
 cd pothole_detection_yolov8
 ```
-<h2>Install the Dependencies</h2>
 
+2. نصب وابستگی‌ها:
 ```bash
-!pip install ultralytics
+pip install ultralytics
+pip install roboflow
+pip install opencv-python
 ```
-```bash
-!pip install roboflow
-```
-```bash
-!pip install fastapi kaleido python_multipart uvicorn
-```
-<h2>Importing YOLO and a roboflow workspace for Image Segmentation</h2>
 
+3. دانلود دیتاست (نمونه با Roboflow):
 ```python
 from roboflow import Roboflow
-rf = Roboflow(api_key="{the api key}")
-project = rf.workspace("{name of workspace}").project("name-of-project")
+rf = Roboflow(api_key="YOUR_API_KEY")
+project = rf.workspace("YOUR_WORKSPACE").project("pothole-detection-project")
 dataset = project.version(1).download("yolov8")
 ```
+توجه: اگر از Colab استفاده می‌کنید، در نوت‌بوک Runtime را روی GPU قرار دهید و در صورت تمایل درایو گوگل را mount کنید.
+`
+## آموزش مدل (Training)
+مثال اجرای آموزش با مدل از پیش‌آموزش‌دیده yolov8m:
+bash
+yolo task=detect mode=train model=yolov8m.pt data=dataset/data.yaml epochs=50 imgsz=640
+پارامترها (قابل تنظیم):
+- model: yolov8n/s/m/l بر اساس منابع و دقت مورد نظر
+- epochs: تعداد epochها (برای دیتاست کوچک مقدار کم‌تر یا fine-tune توصیه می‌شود)
+- imgsz: اندازه ورودی (مثلاً 640)
 
-> [!NOTE]
-> If you are unable to perform the commands after importing the dataset from roboflow, you can access the same dataset by downloading it, upload it to your personal drive and mount the drive to your Google Colab 
+## پیش‌بینی (Inference)
+اجرای inference روی ویدیو یا تصویر:
+bash
+yolo task=detect mode=predict model=runs/detect/train/weights/best.pt conf=0.25 source='demo.mp4'
+خروجی‌ها در مسیر runs/detect/predict یا مشابه آن ذخیره می‌شوند.
 
-<h2>My roboflow workspace containing the pothole dataset</h2>
+## محاسبه مساحت تقریبی از ماسک
+در صورتی که ماسک باینری برای هر چاله در اختیار باشد، می‌توان تعداد پیکسل‌های ناحیه را شمرد و با مقیاس صحیح به مساحت تبدیل کرد. مثال ساده:
+python
+import cv2
 
-[`Roboflow Workspace`](https://app.roboflow.com/vit-76kid/pothole-detection-project-3yiqt/1)
+mask = cv2.imread("mask.png", cv2.IMREAD_GRAYSCALE)
+area_pixels = cv2.countNonZero(mask)
 
-Run the code with mentioned command below.
-- For training the data
-```python
-!yolo task=detect mode=train model=yolov8m.pt data={dataset.location}/data.yaml epochs={number of epochs} imgsz=640
-```
-- For yolov8 segmentation + Tracking & prediction
-```python
-!yolo task=detect mode=predict model={HOME}/runs/detect/train/weights/best.pt conf=0.25 source='/content/drive/MyDrive/demo.mp4'
-```
+# pixel_area_m2 باید بر اساس مقیاس تصویر محاسبه شود (مثال: هر پیکسل معادل 0.0001 مترمربع)
+pixel_area_m2 = 0.0001
+area_m2 = area_pixels * pixel_area_m2
+print("Estimated pothole area (m^2):", area_m2)
+توضیح: تبدیل پیکسل به واحد واقعی نیازمند دانستن ارتفاع دوربین، فواصل و رزولوشن واقعی تصویر یا استفاده از نقاط مرجع است.
+
+## نکات ارزیابی و محدودیت‌ها
+- کیفیت و کمیت دیتاست تأثیر بسیار زیادی بر عملکرد مدل دارد. دیتاست کوچک یا نامتوازن منجر به mAP و دقت پایین خواهد شد.
+- معیارهای مرسوم: Precision, Recall, mAP50, mAP50-95 و F1-score.
+- برای دیتاست‌های کوچک:
+  - از data augmentation استفاده کنید (Mosaic, flip, color jitter و غیره).
+  - ابتدا فقط head را fine-tune کنید یا از learning rate کوچک استفاده کنید.
+- برچسب‌گذاری با کیفیت و یکنواخت ضروری است (خطا در annotations عملکرد را کاهش می‌دهد).
+
+## پیشنهادات برای بهبود پروژه
+- جمع‌آوری و برچسب‌زنی تصاویر بیشتر با شرایط نوری و زاویه‌های متنوع.
+- مقایسه بین نسخه‌های مختلف YOLOv8 (n, s, m, l) و انتخاب مدل متناسب با محدودیت سخت‌افزاری.
+- افزودن ماژول گزارش‌گیری اتوماتیک (خروجی CSV یا داشبورد) با اطلاعات مساحت، مختصات و زمان/مکان (در صورت داشتن GPS).
+- توسعه یک رابط ساده وب (Flask یا Streamlit) برای آپلود عکس و مشاهده نتایج توسط کاربران غیر فنی.
+- تبدیل مدل برای استقرار روی دستگاه‌های لبه (تبدیل به ONNX یا TensorRT).
+
+## منابع
+- Ultralytics YOLOv8: https://github.com/ultralytics/ultralytics
+- Roboflow : https://app.roboflow.com/
+
+---
+
+تهیه شده توسط: ارشیا مخلص
+
 
